@@ -10,12 +10,16 @@ contract FungibleToken is ERC20, IFungibleToken {
 
     string public override version;
 
-    bytes32 public immutable override DOMAIN_SEPARATOR;
-
     // keccak256("Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)");
     bytes32 public constant override PERMIT_TYPEHASH = 0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9;
     
     mapping(address => uint256) public override nonces;
+
+    bytes32 private immutable _TYPE_HASH;
+    bytes32 private immutable _HASHED_NAME;
+    bytes32 private immutable _HASHED_VERSION;
+    uint256 private immutable _CACHED_CHAIN_ID;
+    bytes32 private immutable _CACHED_DOMAIN_SEPARATOR;
 
     constructor(
         string memory name,
@@ -24,16 +28,28 @@ contract FungibleToken is ERC20, IFungibleToken {
     ) ERC20(name, symbol) {
         version = _version;
 
-        uint256 chainId; assembly { chainId := chainid() }
-        DOMAIN_SEPARATOR = keccak256(
+        _TYPE_HASH = keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)");
+        _HASHED_NAME = keccak256(bytes(name));
+        _HASHED_VERSION = keccak256(bytes(_version));
+        _CACHED_CHAIN_ID = block.chainid;
+
+        _CACHED_DOMAIN_SEPARATOR = keccak256(
             abi.encode(
-                keccak256("EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)"),
-                keccak256(bytes(name)),
-                keccak256(bytes(_version)),
-                chainId,
+                _TYPE_HASH,
+                _HASHED_NAME,
+                _HASHED_VERSION,
+                _CACHED_CHAIN_ID,
                 address(this)
             )
         );
+    }
+
+    function DOMAIN_SEPARATOR() public view override returns (bytes32) {
+        if (block.chainid == _CACHED_CHAIN_ID) {
+            return _CACHED_DOMAIN_SEPARATOR;
+        } else {
+            return keccak256(abi.encode(_TYPE_HASH, _HASHED_NAME, _HASHED_VERSION, block.chainid, address(this)));
+        }
     }
 
     function transferFrom(
@@ -63,8 +79,8 @@ contract FungibleToken is ERC20, IFungibleToken {
         bytes32 digest = keccak256(
             abi.encodePacked(
                 "\x19\x01",
-                DOMAIN_SEPARATOR,
                 keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner], deadline))
+                DOMAIN_SEPARATOR(),
             )
         );
         nonces[owner] += 1;
