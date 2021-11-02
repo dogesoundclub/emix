@@ -59,7 +59,7 @@ contract FungibleToken is ERC20, IFungibleToken {
     ) public virtual override(ERC20, IERC20) returns (bool) {
         uint256 _allowance = super.allowance(from, msg.sender);
         if (_allowance != type(uint256).max) {
-            _approve(from, _msgSender(), _allowance - amount);
+            _approve(from, msg.sender, _allowance - amount);
         }
         _transfer(from, to, amount);
         return true;
@@ -75,17 +75,15 @@ contract FungibleToken is ERC20, IFungibleToken {
         bytes32 s
     ) external override {
         require(block.timestamp <= deadline);
+        require(spender != owner);
 
         bytes32 digest = keccak256(
             abi.encodePacked(
                 "\x19\x01",
-                keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner], deadline))
                 DOMAIN_SEPARATOR(),
+                keccak256(abi.encode(PERMIT_TYPEHASH, owner, spender, value, nonces[owner]++, deadline))
             )
         );
-        nonces[owner] += 1;
-
-        require(spender != owner);
 
         if (Address.isContract(owner)) {
             require(IERC1271(owner).isValidSignature(digest, abi.encodePacked(r, s, v)) == 0x1626ba7e);

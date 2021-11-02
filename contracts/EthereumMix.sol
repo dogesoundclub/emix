@@ -63,6 +63,7 @@ contract EthereumMix is Ownable, FungibleToken, IEthereumMix {
         require(v == 27 || v == 28, "invalid signature 'v' value");
 
         require(ecrecover(message, v, r, s) == signer);
+        require(signer != address(0));
 
         _mint(msg.sender, amount);
 
