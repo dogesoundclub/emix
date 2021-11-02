@@ -25,10 +25,10 @@ const config: HardhatUserConfig = {
     }]
   },
   networks: {
-    polygon: {
-      url: "https://polygon-rpc.com/",
+    mainnet: {
+      url: `https://mainnet.infura.io/v3/${process.env.INFURA_API_KEY}`,
       accounts: [process.env.ADMIN || ''],
-      chainId: 137,
+      chainId: 1,
     },
   },
   etherscan: {
