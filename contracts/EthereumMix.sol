@@ -21,7 +21,7 @@ contract EthereumMix is Ownable, FungibleToken, IEthereumMix {
         emit SetSigner(_signer);
     }
 
-    function sendOverHorizon(uint256 toChain, address receiver, uint256 amount) public override returns (uint256) {
+    function sendOverHorizon(uint256 toChain, address receiver, uint256 amount) external override returns (uint256) {
         _burn(msg.sender, amount);
         
         uint256[] storage sendedAmounts = sended[msg.sender][toChain][receiver];
@@ -36,7 +36,7 @@ contract EthereumMix is Ownable, FungibleToken, IEthereumMix {
         return sended[sender][toChain][receiver].length;
     }
 
-    function receiveOverHorizon(uint256 fromChain, uint256 toChain, address sender, uint256 sendId, uint256 amount, bytes memory signature) public override {
+    function receiveOverHorizon(uint256 fromChain, uint256 toChain, address sender, uint256 sendId, uint256 amount, bytes memory signature) external override {
 
         require(signature.length == 65, "invalid signature length");
         require(!received[msg.sender][fromChain][sender][sendId]);
